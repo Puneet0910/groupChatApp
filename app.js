@@ -8,7 +8,12 @@ const { error } = require("console");
 
 const app = express();
 
-app.use(cors());
+app.use(
+  cors({
+    origin: "*",
+    // methods: ['GET', 'POST']
+  })
+);
 app.use(bodyParse.json());
 app.use(express.urlencoded({ extended: true }));
 app.use("/user", userRoute);
