@@ -1,26 +1,22 @@
-const Msg = require("../models/messages");
+const msgModel = require("../models/messages");
 
-exports.msgSend = async (req, res, next) => {
-  const { userId, groupId, message } = req.body;
-
-  if (!userId || !message) {
-    return res.status(400).json({ error: "userId and message are required" });
+exports.sendMessage = async (req, res, next) => {
+  const { msg } = req.body;
+  const userId = req.user.userId; // Retrieve userId from the middleware
+  console.log(userId);
+  
+  if (!msg || msg.trim() === "") {
+    return res.status(400).json({ message: "Message cannot be empty" });
   }
 
   try {
-    const messageData = await Msg.create({
-      userId: userId,
-      groupId: groupId || null,
-      message: message,
+    const response = await msgModel.create({
+      message: msg,
+      userId:userId, // Associate the message with the userId
     });
-
-    res
-      .status(201)
-      .json({ message: "Message sent successfully", data: messageData });
+    res.status(201).json({ message: "Message sent successfully" });
   } catch (error) {
-    console.error("Error sending message:", error);
-    res
-      .status(500)
-      .json({ error: "An error occurred while sending the message" });
+    console.log(error);
+    res.status(500).json({ message: "Failed to send message" });
   }
 };

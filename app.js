@@ -4,7 +4,10 @@ const cors = require("cors");
 const bodyParse = require("body-parser");
 
 const userRoute = require("./routes/userRoute");
-const { error } = require("console");
+const msgRoute = require("./routes/msgRoute");
+
+const userModel = require('./models/user');
+const msgModel = require('./models/messages');
 
 const app = express();
 
@@ -17,8 +20,11 @@ app.use(
 app.use(bodyParse.json());
 app.use(express.urlencoded({ extended: true }));
 app.use("/user", userRoute);
-
+app.use("/msg", msgRoute);
 require("dotenv").config();
+
+userModel.hasMany(msgModel);
+msgModel.belongsTo(userModel);
 
 Sequelize.sync()
   .then((result) => {

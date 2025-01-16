@@ -1,42 +1,18 @@
-const Sequelize = require("sequelize");
-const sequelize = require("../util/database");
+const Sequelize = require('sequelize');
 
-const Message = sequelize.define("message", {
-  id: {
-    type: Sequelize.INTEGER,
-    allowNull: false,
-    autoIncrement: true,
-    primaryKey: true,
+const sequelize = require('../util/database');
+
+const Message = sequelize.define('message',{
+  id:{
+    type:Sequelize.INTEGER,
+    autoIncrement:true,
+    primaryKey:true,
+    allowNull:false,
   },
-  userId: {
-    type: Sequelize.INTEGER,
-    allowNull: false,
-    references: {
-      model: "user", // Name of the users table
-      key: "id",
-    },
-    onUpdate: "CASCADE",
-    onDelete: "CASCADE",
-  },
-  groupId: {
-    type: Sequelize.INTEGER,
-    allowNull: true,
-    references: {
-      model: "groups", // Name of the groups table
-      key: "id",
-    },
-    onUpdate: "CASCADE",
-    onDelete: "SET NULL",
-  },
-  message: {
-    type: Sequelize.TEXT,
-    allowNull: false,
-  },
-  timestamp: {
-    type: Sequelize.DATE,
-    allowNull: false,
-    defaultValue: Sequelize.NOW,
-  },
+  message:{
+    type:Sequelize.STRING,
+    allowNull:false,
+  }
 });
 
 module.exports = Message;
