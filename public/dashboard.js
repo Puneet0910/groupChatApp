@@ -56,5 +56,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     location.href = "./index.html";
     return;
   }
+
   await displayChats(); // Load chats on page load
+
+  // Periodically fetch new chats every 3 seconds
+  setInterval(displayChats, 1000);
 });
