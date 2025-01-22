@@ -49,12 +49,45 @@
         #msg {
             flex: 1;
         }
+        .groups-container {
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 15px;
+            border-radius: 10px;
+            background-color: #ffffff;
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .group-list {
+            list-style: none;
+            padding: 0;
+        }
+        .group-item {
+            padding: 10px;
+            margin: 5px 0;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .group-item span {
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1 class="text-center my-4">Chat App</h1>
         
+        <!-- Groups Section -->
+        <div id="groupsContainer" class="groups-container">
+            <h4>My Groups</h4>
+            <ul id="groupList" class="group-list">
+                <!-- Group items will be dynamically added here -->
+            </ul>
+            <button id="createGroupBtn" class="btn btn-success w-100 mt-3">Create a Group</button>
+        </div>
+
         <!-- Chat Container -->
         <div id="chatContainer" class="chat-container">
         </div>

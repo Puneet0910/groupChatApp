@@ -1,22 +1,24 @@
 const msgModel = require("../models/messages");
 
+// Global Messages
+
 exports.sendMessage = async (req, res, next) => {
-  const { msg } = req.body;
+  const { msg, groupId } = req.body; // Optional groupId
   const userId = req.user.userId;
-  const userName = req.user.userName; // Retrieve userId from the middleware
-  console.log(userId);
-  console.log(userName);
+  const userName = req.user.userName;
 
   if (!msg || msg.trim() === "") {
     return res.status(400).json({ message: "Message cannot be empty" });
   }
 
   try {
-    const response = await msgModel.create({
+    await msgModel.create({
       message: msg,
-      userId: userId,
-      userName: userName, // Associate the message with the userId
+      userId,
+      userName,
+      groupId: groupId || null, // Null for global messages
     });
+
     res.status(201).json({ message: "Message sent successfully" });
   } catch (error) {
     console.log(error);
@@ -24,12 +26,16 @@ exports.sendMessage = async (req, res, next) => {
   }
 };
 
-exports.getMsg = async (req, res, next) => {
+exports.getMessages = async (req, res, next) => {
+  const { groupId } = req.query; // Optional query parameter
+
   try {
     const messages = await msgModel.findAll({
+      where: groupId ? { groupId } : { groupId: null },
       attributes: ["message", "userName", "createdAt"],
       order: [["createdAt", "ASC"]],
     });
+
     res.status(200).json(messages);
   } catch (error) {
     console.log(error);

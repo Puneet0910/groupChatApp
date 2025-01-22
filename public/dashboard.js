@@ -1,110 +1,146 @@
 const token = localStorage.getItem("token");
+let activeGroupId = null; // Track the active group
 
-// Function to save messages to localStorage
+// Save messages to localStorage
 function saveMessagesToLocalStorage(messages) {
   let storedMessages = JSON.parse(localStorage.getItem("messages")) || [];
-
-  // If there are already 10 messages, remove the oldest one
-  if (storedMessages.length >= 10) {
-    storedMessages.shift(); // Remove the first (oldest) message
-  }
-
-  // Add the new messages at the end
   storedMessages.push(...messages);
-
-  // Save the updated list of messages back to localStorage
+  if (storedMessages.length > 50) storedMessages = storedMessages.slice(-50); // Keep the latest 50 messages
   localStorage.setItem("messages", JSON.stringify(storedMessages));
 }
 
-// Function to load messages from localStorage
+// Load messages from localStorage
 function loadMessagesFromLocalStorage() {
-  const storedMessages = JSON.parse(localStorage.getItem("messages")) || [];
   const chatContainer = document.getElementById("chatContainer");
   chatContainer.innerHTML = ""; // Clear existing messages
-
-  storedMessages.forEach((chat) => {
+  const storedMessages = JSON.parse(localStorage.getItem("messages")) || [];
+  storedMessages.forEach(({ userName, message, createdAt }) => {
     const chatElement = document.createElement("div");
     chatElement.classList.add("chat-message");
     chatElement.innerHTML = `
-      <span class="sender-name">${chat.userName}</span>
-      <span class="chat-text">${chat.message}</span>
-      <span class="timestamp">${new Date(
-        chat.createdAt
-      ).toLocaleTimeString()}</span>
-    `;
+            <span class="sender-name">${userName}</span>
+            <span class="chat-text">${message}</span>
+            <span class="timestamp">${new Date(
+              createdAt
+            ).toLocaleTimeString()}</span>
+        `;
     chatContainer.appendChild(chatElement);
   });
-
   chatContainer.scrollTop = chatContainer.scrollHeight;
 }
 
-// Send message function
-async function sendMsg(event) {
-  event.preventDefault();
-  const msg = document.getElementById("msg").value;
-  const msgData = { msg };
-
-  try {
-    const response = await axios.post(
-      `http://localhost:3000/msg/sendMsg`,
-      msgData,
-      {
-        headers: {
-          Authorization: token,
-        },
-      }
-    );
-    alert("Message Sent Successfully");
-    document.getElementById("messages").reset();
-
-    // Add the new message to localStorage and update the chat
-    saveMessagesToLocalStorage([
-      {
-        userName: response.data.userName, // Assuming backend returns userName
-        message: msg,
-        createdAt: new Date().toISOString(),
-      },
-    ]);
-
-    loadMessagesFromLocalStorage(); // Reload messages from localStorage
-  } catch (error) {
-    console.log(error);
-  }
-}
-
-// Function to fetch new messages from backend
+// Fetch new messages from backend
 async function fetchNewMessages() {
   try {
-    const response = await axios.get("http://localhost:3000/msg/getChats", {
+    const endpoint = activeGroupId
+      ? `http://localhost:3000/msg/getMessages?groupId=${activeGroupId}`
+      : `http://localhost:3000/msg/getMessages`;
+    const { data } = await axios.get(endpoint, {
       headers: { Authorization: token },
     });
-
-    const newMessages = response.data;
-
-    // Save new messages to localStorage
-    saveMessagesToLocalStorage(newMessages);
-
-    // Reload messages from localStorage to reflect updates
+    saveMessagesToLocalStorage(data);
     loadMessagesFromLocalStorage();
   } catch (error) {
-    console.error("Error fetching new messages:", error);
+    console.error("Error fetching messages:", error);
+    alert("Failed to fetch messages. Please try again.");
   }
 }
 
-// Display chats when page loads
-document.addEventListener("DOMContentLoaded", async () => {
-  if (!token) {
-    alert("Please Login to Continue");
-    location.href = "./index.html";
-    return;
+// Send message
+async function sendMsg(event) {
+  event.preventDefault();
+  const message = document.getElementById("msg").value;
+  try {
+    const endpoint = "http://localhost:3000/msg/sendMsg";
+    await axios.post(
+      endpoint,
+      { msg: message, groupId: activeGroupId },
+      { headers: { Authorization: token } }
+    );
+    document.getElementById("messages").reset();
+    fetchNewMessages();
+  } catch (error) {
+    console.error("Error sending message:", error);
+    alert("Failed to send message. Please try again.");
   }
+}
 
-  // Load existing messages from localStorage
-  loadMessagesFromLocalStorage();
+// Fetch groups and update UI
+async function fetchGroups() {
+  try {
+    const { data } = await axios.get("http://localhost:3000/groups", {
+      headers: { Authorization: token },
+    });
+    const groupList = document.getElementById("groupList");
+    groupList.innerHTML = "";
+    data.forEach(({ id, name }) => {
+      const groupItem = document.createElement("li");
+      groupItem.classList.add("group-item");
+      groupItem.dataset.groupId = id;
+      groupItem.innerHTML = `
+                <span>${name}</span>
+                <button class="btn btn-sm btn-danger" onclick="leaveGroup(${id})">Leave</button>
+            `;
+      groupItem.onclick = () => switchGroup(id);
+      groupList.appendChild(groupItem);
+    });
+  } catch (error) {
+    console.error("Error fetching groups:", error);
+    alert("Failed to fetch groups. Please try again.");
+  }
+}
 
-  // Fetch new messages from backend
-  await fetchNewMessages();
+// Create a new group
+async function createGroup() {
+  const groupName = prompt("Enter group name:");
+  if (!groupName) return;
+  try {
+    await axios.post(
+      "http://localhost:3000/groups/createGroup",
+      { name: groupName },
+      { headers: { Authorization: token } }
+    );
+    fetchGroups();
+  } catch (error) {
+    console.error("Error creating group:", error);
+    alert("Failed to create group. Please try again.");
+  }
+}
 
-  // Periodically fetch new chats every 3 seconds
+// Leave a group
+async function leaveGroup(groupId) {
+  try {
+    await axios.delete(`http://localhost:3000/groups/leave/${groupId}`, {
+      headers: { Authorization: token },
+    });
+    fetchGroups();
+    if (groupId === activeGroupId) {
+      activeGroupId = null;
+      fetchNewMessages();
+    }
+  } catch (error) {
+    console.error("Error leaving group:", error);
+    alert("Failed to leave group. Please try again.");
+  }
+}
+
+// Switch to a group
+function switchGroup(groupId) {
+  activeGroupId = groupId;
+  fetchNewMessages();
+}
+
+// Initialize
+document.addEventListener("DOMContentLoaded", () => {
+  if (!token) {
+    alert("Please login to continue");
+    location.href = "./index.html";
+  }
+  fetchGroups();
+  fetchNewMessages();
   setInterval(fetchNewMessages, 3000);
 });
+
+document
+  .getElementById("createGroupBtn")
+  .addEventListener("click", createGroup);
