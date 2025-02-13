@@ -20,6 +20,10 @@ const Message = sequelize.define("message", {
     type: Sequelize.INTEGER,
     allowNull: true, // Null for global messages
   },
+  userName:{
+    type:Sequelize.STRING,
+    allowNull:false,
+  }
 });
 
 module.exports = Message;

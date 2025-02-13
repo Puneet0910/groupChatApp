@@ -13,7 +13,7 @@ exports.sendMessage = async (req, res, next) => {
 
   try {
     await msgModel.create({
-      message: msg,
+      content: msg,
       userId,
       userName,
       groupId: groupId || null, // Null for global messages
@@ -32,7 +32,7 @@ exports.getMessages = async (req, res, next) => {
   try {
     const messages = await msgModel.findAll({
       where: groupId ? { groupId } : { groupId: null },
-      attributes: ["message", "userName", "createdAt"],
+      attributes: ["content", "userName", "createdAt"],
       order: [["createdAt", "ASC"]],
     });
 

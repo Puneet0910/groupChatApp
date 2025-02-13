@@ -3,7 +3,7 @@ const GroupMember = require("../models/groupMember");
 
 exports.createGroup = async (req, res) => {
   const { name } = req.body;
-  const userId = req.user.id; // From auth middleware
+  const userId = req.user.userId; // From auth middleware
 
   try {
     const group = await Group.create({ name, createdBy: userId });
@@ -16,7 +16,7 @@ exports.createGroup = async (req, res) => {
 };
 
 exports.getUserGroups = async (req, res) => {
-  const userId = req.user.id;
+  const userId = req.user.userId;
 
   try {
     const groups = await Group.findAll({

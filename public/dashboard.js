@@ -4,22 +4,28 @@ let activeGroupId = null; // Track the active group
 // Save messages to localStorage
 function saveMessagesToLocalStorage(messages) {
   let storedMessages = JSON.parse(localStorage.getItem("messages")) || [];
+
   storedMessages.push(...messages);
-  if (storedMessages.length > 50) storedMessages = storedMessages.slice(-50); // Keep the latest 50 messages
+
+  if (storedMessages.length > 10) {
+    storedMessages = storedMessages.slice(-10); // Keep only the latest 50 messages
+  }
+
   localStorage.setItem("messages", JSON.stringify(storedMessages));
 }
+
 
 // Load messages from localStorage
 function loadMessagesFromLocalStorage() {
   const chatContainer = document.getElementById("chatContainer");
   chatContainer.innerHTML = ""; // Clear existing messages
   const storedMessages = JSON.parse(localStorage.getItem("messages")) || [];
-  storedMessages.forEach(({ userName, message, createdAt }) => {
+  storedMessages.forEach(({ userName, content, createdAt }) => {
     const chatElement = document.createElement("div");
-    chatElement.classList.add("chat-message");
+    chatElement.classList.add("chat-content");
     chatElement.innerHTML = `
             <span class="sender-name">${userName}</span>
-            <span class="chat-text">${message}</span>
+            <span class="chat-text">${content}</span>
             <span class="timestamp">${new Date(
               createdAt
             ).toLocaleTimeString()}</span>
@@ -35,9 +41,18 @@ async function fetchNewMessages() {
     const endpoint = activeGroupId
       ? `http://localhost:3000/msg/getMessages?groupId=${activeGroupId}`
       : `http://localhost:3000/msg/getMessages`;
+
     const { data } = await axios.get(endpoint, {
       headers: { Authorization: token },
     });
+
+    if (!data || data.length === 0) {
+      console.log("No messages found.");
+      localStorage.setItem("messages", JSON.stringify([])); // Clear stored messages
+      loadMessagesFromLocalStorage();
+      return;
+    }
+
     saveMessagesToLocalStorage(data);
     loadMessagesFromLocalStorage();
   } catch (error) {
@@ -57,6 +72,8 @@ async function sendMsg(event) {
       { msg: message, groupId: activeGroupId },
       { headers: { Authorization: token } }
     );
+    console.log(msg);
+    
     document.getElementById("messages").reset();
     fetchNewMessages();
   } catch (error) {
@@ -68,11 +85,21 @@ async function sendMsg(event) {
 // Fetch groups and update UI
 async function fetchGroups() {
   try {
-    const { data } = await axios.get("http://localhost:3000/groups", {
-      headers: { Authorization: token },
-    });
+    const { data } = await axios.get(
+      "http://localhost:3000/groups/userGroups",
+      {
+        headers: { Authorization: token },
+      }
+    );
+
     const groupList = document.getElementById("groupList");
     groupList.innerHTML = "";
+
+    if (!data || data.length === 0) {
+      groupList.innerHTML = "<li>No groups available. Create one!</li>";
+      return; // Exit if no groups exist
+    }
+
     data.forEach(({ id, name }) => {
       const groupItem = document.createElement("li");
       groupItem.classList.add("group-item");
@@ -86,9 +113,11 @@ async function fetchGroups() {
     });
   } catch (error) {
     console.error("Error fetching groups:", error);
-    alert("Failed to fetch groups. Please try again.");
+    document.getElementById("groupList").innerHTML =
+      "<li>Failed to load groups. Please try again.</li>";
   }
 }
+
 
 // Create a new group
 async function createGroup() {
@@ -138,7 +167,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   fetchGroups();
   fetchNewMessages();
-  setInterval(fetchNewMessages, 3000);
+  // setInterval(fetchNewMessages, 3000);
 });
 
 document
