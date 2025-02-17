@@ -2,13 +2,17 @@ const token = localStorage.getItem("token");
 let activeGroupId = null; // Track the active group
 
 // Save messages to localStorage
-function saveMessagesToLocalStorage(messages) {
-  let storedMessages = JSON.parse(localStorage.getItem("messages")) || [];
+function saveMessagesToLocalStorage(messages, groupId) {
+  let storedMessages = JSON.parse(localStorage.getItem("messages")) || {};
 
-  storedMessages.push(...messages);
+  if (!storedMessages[groupId]) {
+    storedMessages[groupId] = [];
+  }
 
-  if (storedMessages.length > 10) {
-    storedMessages = storedMessages.slice(-10); // Keep only the latest 50 messages
+  storedMessages[groupId].push(...messages);
+
+  if (storedMessages[groupId].length > 10) {
+    storedMessages[groupId] = storedMessages[groupId].slice(-10); // Keep only the latest 10 messages per group
   }
 
   localStorage.setItem("messages", JSON.stringify(storedMessages));
@@ -18,9 +22,14 @@ function saveMessagesToLocalStorage(messages) {
 // Load messages from localStorage
 function loadMessagesFromLocalStorage() {
   const chatContainer = document.getElementById("chatContainer");
-  chatContainer.innerHTML = ""; // Clear existing messages
-  const storedMessages = JSON.parse(localStorage.getItem("messages")) || [];
-  storedMessages.forEach(({ userName, content, createdAt }) => {
+  chatContainer.innerHTML = ""; // Clear messages before loading new ones
+
+  const storedMessages = JSON.parse(localStorage.getItem("messages")) || {};
+
+  // Only load messages for the selected group or global chat
+  const messages = storedMessages[activeGroupId] || [];
+
+  messages.forEach(({ userName, content, createdAt }) => {
     const chatElement = document.createElement("div");
     chatElement.classList.add("chat-content");
     chatElement.innerHTML = `
@@ -32,12 +41,16 @@ function loadMessagesFromLocalStorage() {
         `;
     chatContainer.appendChild(chatElement);
   });
+
   chatContainer.scrollTop = chatContainer.scrollHeight;
 }
 
 // Fetch new messages from backend
 async function fetchNewMessages() {
   try {
+    const chatContainer = document.getElementById("chatContainer");
+    chatContainer.innerHTML = ""; // Clear chat container before loading new messages
+
     const endpoint = activeGroupId
       ? `http://localhost:3000/msg/getMessages?groupId=${activeGroupId}`
       : `http://localhost:3000/msg/getMessages`;
@@ -48,18 +61,21 @@ async function fetchNewMessages() {
 
     if (!data || data.length === 0) {
       console.log("No messages found.");
-      localStorage.setItem("messages", JSON.stringify([])); // Clear stored messages
-      loadMessagesFromLocalStorage();
+      localStorage.setItem("messages", JSON.stringify({})); // Clear stored messages
       return;
     }
 
-    saveMessagesToLocalStorage(data);
-    loadMessagesFromLocalStorage();
+    saveMessagesToLocalStorage(data, activeGroupId);
+    loadMessagesFromLocalStorage(); // Load only relevant messages
   } catch (error) {
     console.error("Error fetching messages:", error);
     alert("Failed to fetch messages. Please try again.");
   }
 }
+
+
+
+
 
 // Send message
 async function sendMsg(event) {
@@ -73,8 +89,8 @@ async function sendMsg(event) {
       { headers: { Authorization: token } }
     );
     console.log(msg);
-    
-    document.getElementById("messages").reset();
+
+    document.getElementById("msg").value = ""; // Reset the input field
     fetchNewMessages();
   } catch (error) {
     console.error("Error sending message:", error);
@@ -108,7 +124,7 @@ async function fetchGroups() {
                 <span>${name}</span>
                 <button class="btn btn-sm btn-danger" onclick="leaveGroup(${id})">Leave</button>
             `;
-      groupItem.onclick = () => switchGroup(id);
+      groupItem.onclick = () => switchGroup(id); // When clicked, switch to this group
       groupList.appendChild(groupItem);
     });
   } catch (error) {
@@ -117,7 +133,6 @@ async function fetchGroups() {
       "<li>Failed to load groups. Please try again.</li>";
   }
 }
-
 
 // Create a new group
 async function createGroup() {
@@ -155,9 +170,41 @@ async function leaveGroup(groupId) {
 
 // Switch to a group
 function switchGroup(groupId) {
+  if (activeGroupId === groupId) return; // Prevent unnecessary reloading
+
   activeGroupId = groupId;
+  localStorage.setItem("activeGroupId", groupId); // Store active group
+
   fetchNewMessages();
+  updateActiveGroupUI(groupId);
 }
+
+
+
+// Update the UI to highlight the active group
+function updateActiveGroupUI(groupId) {
+  const groupItems = document.querySelectorAll(".group-item");
+  groupItems.forEach((item) => {
+    if (groupId && item.dataset.groupId == groupId) {
+      item.classList.add("active");
+    } else {
+      item.classList.remove("active");
+    }
+  });
+
+  // Hide "Leave Group" button if switching to global chat
+  const leaveGroupBtn = document.getElementById("leaveGroupBtn");
+  if (leaveGroupBtn) {
+    leaveGroupBtn.style.display = groupId ? "block" : "none";
+  }
+}
+
+document.getElementById("exitGroupLink").addEventListener("click", (event) => {
+  event.preventDefault(); // Prevent default link behavior
+  activeGroupId = null; // Reset active group (switch back to global chat)
+  fetchNewMessages();
+  updateActiveGroupUI(null); // Remove active group highlighting
+});
 
 // Initialize
 document.addEventListener("DOMContentLoaded", () => {
@@ -167,9 +214,25 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   fetchGroups();
   fetchNewMessages();
-  // setInterval(fetchNewMessages, 3000);
+  // setInterval(fetchNewMessages, 3000); // Optional, fetch messages every 3 seconds
 });
 
 document
   .getElementById("createGroupBtn")
   .addEventListener("click", createGroup);
+
+document.getElementById("send-msg").addEventListener("click", sendMsg);
+
+async function inviteToGroup(groupId, email) {
+  try {
+    await axios.post(
+      "http://localhost:3000/groups/inviteUser",
+      { groupId, email },
+      { headers: { Authorization: token } }
+    );
+    alert("User invited successfully!");
+  } catch (error) {
+    console.error("Error inviting user:", error);
+    alert("Failed to invite user.");
+  }
+}

@@ -5,10 +5,10 @@ const bodyParse = require("body-parser");
 
 const userRoute = require("./routes/userRoute");
 const msgRoute = require("./routes/msgRoute");
-const groupRoutes = require('./routes/groupRoutes');
+const groupRoutes = require("./routes/groupRoutes");
 
-const userModel = require('./models/user');
-const msgModel = require('./models/messages');
+const userModel = require("./models/user");
+const msgModel = require("./models/message");
 const Group = require("./models/group");
 const GroupMember = require("./models/groupMember");
 
@@ -17,14 +17,14 @@ const app = express();
 app.use(
   cors({
     origin: "*",
-    // methods: ['GET', 'POST']
   })
 );
 app.use(bodyParse.json());
 app.use(express.urlencoded({ extended: true }));
 app.use("/user", userRoute);
 app.use("/msg", msgRoute);
-app.use('/groups', groupRoutes);
+app.use("/groups", groupRoutes);
+
 require("dotenv").config();
 
 userModel.hasMany(msgModel);

@@ -1,44 +1,47 @@
-const msgModel = require("../models/messages");
+const User = require("../models/user");
+const Message = require("../models/message");
+const GroupMember = require("../models/groupMember");
 
-// Global Messages
-
-exports.sendMessage = async (req, res, next) => {
-  const { msg, groupId } = req.body; // Optional groupId
+exports.sendMessage = async (req, res) => {
+  const { msg, groupId } = req.body;
   const userId = req.user.userId;
   const userName = req.user.userName;
 
-  if (!msg || msg.trim() === "") {
-    return res.status(400).json({ message: "Message cannot be empty" });
-  }
-
   try {
-    await msgModel.create({
-      content: msg,
-      userId,
-      userName,
-      groupId: groupId || null, // Null for global messages
-    });
+    // If groupId is provided, make sure the user is a member of the group
+    if (groupId) {
+      const isMember = await GroupMember.findOne({
+        where: { userId, groupId },
+      });
+      if (!isMember) {
+        return res
+          .status(403)
+          .json({ message: "You are not a member of this group" });
+      }
+    }
 
-    res.status(201).json({ message: "Message sent successfully" });
+    const message = await Message.create({ userName,content: msg, userId, groupId });
+
+    res.status(200).json({ message: "Message sent successfully", message });
   } catch (error) {
-    console.log(error);
+    console.error(error);
     res.status(500).json({ message: "Failed to send message" });
   }
 };
 
-exports.getMessages = async (req, res, next) => {
-  const { groupId } = req.query; // Optional query parameter
+exports.getMessages = async (req, res) => {
+  const { groupId } = req.query;
+  const userId = req.user.userId; // From auth middleware
 
   try {
-    const messages = await msgModel.findAll({
-      where: groupId ? { groupId } : { groupId: null },
-      attributes: ["content", "userName", "createdAt"],
-      order: [["createdAt", "ASC"]],
+    const messages = await Message.findAll({
+      where: groupId ? { groupId } : { userId },
+      include: [{ model: User, attributes: ["name"] }],
     });
 
     res.status(200).json(messages);
   } catch (error) {
-    console.log(error);
-    res.status(500).json({ message: "Failed to retrieve messages" });
+    console.error(error);
+    res.status(500).json({ message: "Failed to fetch messages" });
   }
 };

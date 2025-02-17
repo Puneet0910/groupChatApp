@@ -14,7 +14,7 @@ const Group = sequelize.define("group", {
   },
   createdBy: {
     type: Sequelize.INTEGER,
-    allowNull: false,
+    allowNull: false, // The user who created the group
   },
 });
 

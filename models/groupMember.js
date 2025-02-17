@@ -8,11 +8,11 @@ const GroupMember = sequelize.define("groupMember", {
     allowNull: false,
     primaryKey: true,
   },
-  groupId: {
+  userId: {
     type: Sequelize.INTEGER,
     allowNull: false,
   },
-  userId: {
+  groupId: {
     type: Sequelize.INTEGER,
     allowNull: false,
   },
