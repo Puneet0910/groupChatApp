@@ -7,8 +7,11 @@ const userRoute = require("./routes/userRoute");
 const userModel = require("./models/userModel");
 
 const app = express();
-
-app.use(cors());
+app.use(
+  cors({
+    origin: "*",
+  })
+);
 app.use(bodyParse.json());
 app.use(express.urlencoded({ extended: true }));
 app.use("/user", userRoute);
