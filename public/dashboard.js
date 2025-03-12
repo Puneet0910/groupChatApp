@@ -55,5 +55,6 @@ document.addEventListener("DOMContentLoaded", () => {
     location.href = "./index.html";
   } else {
     fetchMsg(); // Fetch messages on page load
+    setInterval(fetchMsg, 1000);
   }
 });
