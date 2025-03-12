@@ -12,7 +12,7 @@ async function signup(event) {
       userData
     );
     alert(response.data.message);
-    // location.href = "index.html";
+    location.href = "index.html";
   } catch (error) {
     if (error.response) {
       // Handle specific status codes
