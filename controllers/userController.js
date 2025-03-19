@@ -50,3 +50,12 @@ exports.login = async (req, res, next) => {
     return res.status(500).json({ message: "Internal Server error" });
   }
 };
+exports.getUsers = async (req, res, next) => {
+  try {
+    const users = await userModel.findAll({ attributes: ["name"] }); // Select only userName
+    res.json(users);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};

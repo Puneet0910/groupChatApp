@@ -84,13 +84,77 @@ async function fetchNewMessages() {
       return;
     }
 
-    saveMessagesToLocalStorage(data.messages); // Now passing the correct array
+    saveMessagesToLocalStorage(data.messages);
     loadMessagesFromLocalStorage();
   } catch (error) {
     console.error("Error fetching messages:", error);
     alert("Failed to fetch messages. Please try again.");
   }
 }
+async function fetchAllUsers() {
+  try {
+    const response = await axios.get(`${endPoint}user/getUsers`); // Await the response
+    displayUsers(response.data); // Pass the actual data (array of users)
+  } catch (error) {
+    console.error("Error fetching users:", error);
+  }
+}
+
+function displayUsers(users) {
+  const userList = document.getElementById("usersList");
+  userList.innerHTML = ""; // Clear the list before appending
+
+  users.forEach((user) => {
+    const userItem = document.createElement("li");
+    userItem.classList.add(
+      "list-group-item",
+      "d-flex",
+      "justify-content-between",
+      "align-items-center"
+    );
+
+    // User name
+    const userName = document.createElement("span");
+    userName.textContent = user.name;
+
+    // Buttons Container
+    const buttonContainer = document.createElement("div");
+    buttonContainer.classList.add("user-btns");
+
+    // "Send Message" Button
+    const sendMsgBtn = document.createElement("button");
+    sendMsgBtn.textContent = "Send Message";
+    sendMsgBtn.classList.add("btn", "btn-primary", "btn-sm");
+    sendMsgBtn.onclick = () => sendMessageToUser(user.name);
+
+    // "Add to Group" Button
+    const addToGroupBtn = document.createElement("button");
+    addToGroupBtn.textContent = "Add to Group";
+    addToGroupBtn.classList.add("btn", "btn-success", "btn-sm");
+    addToGroupBtn.onclick = () => addUserToGroup(user.name);
+
+    // Append buttons to container
+    buttonContainer.appendChild(sendMsgBtn);
+    buttonContainer.appendChild(addToGroupBtn);
+
+    // Append elements to the user list item
+    userItem.appendChild(userName);
+    userItem.appendChild(buttonContainer);
+    userList.appendChild(userItem);
+  });
+}
+
+// Placeholder function for sending a message to a user
+function sendMessageToUser(userName) {
+  alert(`Sending message to ${userName} (Feature in progress...)`);
+}
+
+// Placeholder function for adding a user to a group
+function addUserToGroup(userName) {
+  alert(`Adding ${userName} to a group (Feature in progress...)`);
+}
+
+
 
 document.addEventListener("DOMContentLoaded", () => {
   if (!token) {
@@ -98,6 +162,6 @@ document.addEventListener("DOMContentLoaded", () => {
     location.href = "./index.html";
   } else {
     fetchNewMessages();
-    // setInterval(fetchNewMessages, 3000); // Fetch every 3 seconds
+    fetchAllUsers();
   }
 });
