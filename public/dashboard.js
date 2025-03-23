@@ -144,17 +144,86 @@ function displayUsers(users) {
   });
 }
 
-// Placeholder function for sending a message to a user
-function sendMessageToUser(userName) {
-  alert(`Sending message to ${userName} (Feature in progress...)`);
+// Create a new group
+async function createGroup() {
+  const groupName = document.getElementById("groupName").value;
+
+  if (!groupName) {
+    alert("Please enter a group name.");
+    return;
+  }
+
+  try {
+    await axios.post(
+      "http://localhost:3000/groups/createGroup",
+      { name: groupName },
+      { headers: { Authorization: token } }
+    );
+
+    alert("Group created successfully!");
+    fetchMyGroups();
+
+    // Close the modal after group creation
+    const createGroupModalEl = document.getElementById("createGroupModal");
+    const createGroupModal = bootstrap.Modal.getInstance(createGroupModalEl);
+
+    if (createGroupModal) {
+      createGroupModal.hide();
+    }
+
+    // Clear the input field
+    document.getElementById("groupName").value = "";
+  } catch (error) {
+    console.error("Error creating group:", error);
+    alert("Failed to create group. Please try again.");
+  }
+}
+async function fetchMyGroups() {
+  try {
+    const response = await axios.get("http://localhost:3000/groups/getGroups", {
+      headers: { Authorization: token },
+    });
+
+    const groupList = document.getElementById("groupList");
+    groupList.innerHTML = ""; // Clear the list before adding new data
+
+    const groups = response.data.groups;
+
+    if (groups.length === 0) {
+      groupList.innerHTML = "<li>No groups available</li>";
+      return;
+    }
+
+    // Dynamically create list items for each group
+    groups.forEach((groupName) => {
+      const listItem = document.createElement("li");
+      listItem.classList.add("group-item");
+
+      // Group name
+      const groupNameSpan = document.createElement("span");
+      groupNameSpan.textContent = groupName;
+
+      // Optional: Add a "View" or "Join" button
+      const viewButton = document.createElement("button");
+      viewButton.textContent = "View Group";
+      viewButton.classList.add("btn", "btn-primary", "btn-sm");
+      viewButton.onclick = () => viewGroup(groupName); // Example function
+
+      // Append elements
+      listItem.appendChild(groupNameSpan);
+      listItem.appendChild(viewButton);
+      groupList.appendChild(listItem);
+    });
+  } catch (error) {
+    console.error("Error fetching groups:", error);
+    alert("Failed to load groups. Please try again.");
+  }
 }
 
-// Placeholder function for adding a user to a group
-function addUserToGroup(userName) {
-  alert(`Adding ${userName} to a group (Feature in progress...)`);
+// Example function to handle viewing a group (customize as needed)
+function viewGroup(groupName) {
+  alert(`Viewing group: ${groupName}`);
 }
-
-
 
 document.addEventListener("DOMContentLoaded", () => {
   if (!token) {
@@ -163,5 +232,6 @@ document.addEventListener("DOMContentLoaded", () => {
   } else {
     fetchNewMessages();
     fetchAllUsers();
+    fetchMyGroups();
   }
 });
