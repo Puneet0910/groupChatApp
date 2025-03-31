@@ -51,11 +51,22 @@ exports.login = async (req, res, next) => {
   }
 };
 exports.getUsers = async (req, res, next) => {
+  const { Op } = require("sequelize");
   try {
-    const users = await userModel.findAll({ attributes: ["name"] }); // Select only userName
+    const loggedInUserName = req.user?.userName; // Assuming req.user contains the logged-in user's info
+
+    const users = await userModel.findAll({
+      attributes: ["name"],
+      where: {
+        name: { [Op.ne]: loggedInUserName }, // Exclude logged-in user
+      },
+    });
+
     res.json(users);
   } catch (error) {
-    console.log(error);
+    console.error(error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
+

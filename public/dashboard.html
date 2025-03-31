@@ -104,13 +104,51 @@
         display: flex;
         gap: 5px;
       }
+      .group-sidebar {
+        position: fixed;
+        top: 60px;
+        right: 20px;
+        width: 300px;
+        max-height: 80vh;
+        overflow-y: auto;
+        background-color: #ffffff;
+        border-radius: 10px;
+        padding: 15px;
+        box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+        border: 1px solid #dee2e6;
+      }
+
+      .member-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px;
+        border-bottom: 1px solid #dee2e6;
+      }
+
+      .remove-btn {
+        color: white;
+        background-color: red;
+        border: none;
+        padding: 5px 10px;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+
+      .remove-btn:hover {
+        background-color: darkred;
+      }
     </style>
   </head>
   <body>
     <div class="container">
       <h1 class="text-center my-4">
         <a href="#" id="exitGroupLink">Chat App</a>
+        <button class="btn btn-secondary" onclick="viewGroup(null)">
+          View Global Chat
+        </button>
       </h1>
+      <button id="logoutBtn" class="btn btn-danger">Logout</button>
+
       <div id="groupsContainer" class="groups-container">
         <h4>My Groups</h4>
         <ul id="groupList" class="group-list">
@@ -136,7 +174,12 @@
       <div id="chatContainer" class="chat-container">
         <!-- Messages will be dynamically loaded here -->
       </div>
-
+      <div id="groupSidebar" class="group-sidebar" style="display: none">
+        <h4>Group Members</h4>
+        <ul id="groupMembersList" class="list-group">
+          <!-- Members will be dynamically added here -->
+        </ul>
+      </div>
       <!-- Message Input Form -->
       <form id="messages" class="form-container" onsubmit="sendMsg(event)">
         <input
